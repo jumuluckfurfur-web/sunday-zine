@@ -42,3 +42,15 @@ main {
 #book {
   display: none;
 }
+#book {
+  display: none;
+}
+
+#book canvas {
+  display: block;
+  max-width: 80vw;
+  max-height: 80vh;
+  width: auto !important;
+  height: auto !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
