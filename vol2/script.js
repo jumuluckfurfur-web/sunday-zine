@@ -8,6 +8,9 @@ const pdfUrl =
   "./SUNDAY_ZINE_VOL2_AUTOSAVE.pdf";
 
 
+const main =
+  document.querySelector("main");
+
 const book =
   document.getElementById("book");
 
@@ -27,12 +30,9 @@ const pageCounter =
   document.getElementById("page-counter");
 
 
-const PAGE_RATIO =
-  258 / 183;
+const RENDER_WIDTH = 1600;
 
-const RENDER_WIDTH =
-  1600;
-
+let pageRatio = 258 / 183;
 
 let pageFlip = null;
 
@@ -42,56 +42,75 @@ const temporaryImageUrls = [];
 
 
 /*
-  현재 브라우저 크기에 맞춰
-  실제 화면에 표시할 한 페이지 크기를 계산한다.
+  실제로 책이 들어갈 main 영역을 측정해서
+  가능한 최대 페이지 크기를 계산한다.
 */
 function getBookSize() {
+
   const isMobile =
     window.innerWidth <= 700;
 
-  const horizontalMargin =
-    isMobile ? 16 : 70;
-
-  const verticalSpace =
-    isMobile ? 100 : 125;
-
   const availableWidth =
-    Math.max(
-      280,
-      window.innerWidth - horizontalMargin
-    );
+    main.clientWidth;
 
   const availableHeight =
-    Math.max(
-      360,
-      window.innerHeight - verticalSpace
-    );
+    main.clientHeight;
+
 
   let pageWidth;
 
+
   if (isMobile) {
+
+    /*
+      모바일:
+      한 페이지가 화면 안에 최대한 크게 들어가도록
+    */
+    const widthLimit =
+      availableWidth - 16;
+
+    const heightLimit =
+      (availableHeight - 8) /
+      pageRatio;
+
     pageWidth =
       Math.min(
-        620,
-        availableWidth,
-        availableHeight / PAGE_RATIO
+        widthLimit,
+        heightLimit
       );
+
   } else {
+
+    /*
+      데스크톱:
+      두 페이지 펼침이 main 영역을
+      거의 가득 사용하도록
+    */
+    const widthLimit =
+      (availableWidth - 32) / 2;
+
+    const heightLimit =
+      (availableHeight - 12) /
+      pageRatio;
+
     pageWidth =
       Math.min(
-        620,
-        availableWidth / 2,
-        availableHeight / PAGE_RATIO
+        widthLimit,
+        heightLimit
       );
+
   }
+
 
   pageWidth =
     Math.floor(pageWidth);
 
+
   const pageHeight =
     Math.floor(
-      pageWidth * PAGE_RATIO
+      pageWidth * pageRatio
     );
+
 
   return {
     width: pageWidth,
@@ -101,9 +120,10 @@ function getBookSize() {
 
 
 /*
-  Canvas를 손실 없는 PNG Blob으로 변환한다.
+  Canvas → 손실 없는 PNG
 */
 function canvasToPngBlob(canvas) {
+
   return new Promise(
     (resolve, reject) => {
 
@@ -111,14 +131,17 @@ function canvasToPngBlob(canvas) {
         (blob) => {
 
           if (blob) {
+
             resolve(blob);
 
           } else {
+
             reject(
               new Error(
                 "페이지 이미지를 만들 수 없습니다."
               )
             );
+
           }
 
         },
@@ -127,11 +150,12 @@ function canvasToPngBlob(canvas) {
 
     }
   );
+
 }
 
 
 /*
-  브라우저가 이미지를 실제로 읽을 때까지 기다린다.
+  이미지 로딩 완료 대기
 */
 function waitForImage(image) {
 
@@ -139,8 +163,11 @@ function waitForImage(image) {
     image.complete &&
     image.naturalWidth > 0
   ) {
+
     return Promise.resolve();
+
   }
+
 
   return new Promise(
     (resolve, reject) => {
@@ -157,11 +184,12 @@ function waitForImage(image) {
 
     }
   );
+
 }
 
 
 /*
-  페이지 번호 표시와 화살표 상태 갱신
+  페이지 카운터
 */
 function updateCounter(pageIndex) {
 
@@ -171,19 +199,22 @@ function updateCounter(pageIndex) {
       totalPages
     );
 
+
   pageCounter.textContent =
     `${String(currentPage).padStart(2, "0")} / ${String(totalPages).padStart(2, "0")}`;
+
 
   prevButton.disabled =
     pageIndex <= 0;
 
   nextButton.disabled =
     pageIndex >= totalPages - 1;
+
 }
 
 
 /*
-  PDF 한 페이지를 고해상도 PNG 페이지로 만든다.
+  PDF 한 페이지를 고해상도 PNG로 만든다.
 */
 async function createPageImage(
   pdf,
@@ -195,14 +226,17 @@ async function createPageImage(
       pageNumber
     );
 
+
   const originalViewport =
     page.getViewport({
       scale: 1
     });
 
+
   const renderScale =
     RENDER_WIDTH /
     originalViewport.width;
+
 
   const viewport =
     page.getViewport({
@@ -215,6 +249,7 @@ async function createPageImage(
       "canvas"
     );
 
+
   const context =
     canvas.getContext(
       "2d",
@@ -225,9 +260,11 @@ async function createPageImage(
 
 
   if (!context) {
+
     throw new Error(
       "Canvas를 만들 수 없습니다."
     );
+
   }
 
 
@@ -244,6 +281,7 @@ async function createPageImage(
 
   context.fillStyle =
     "#ffffff";
+
 
   context.fillRect(
     0,
@@ -270,6 +308,7 @@ async function createPageImage(
       blob
     );
 
+
   temporaryImageUrls.push(
     imageUrl
   );
@@ -280,20 +319,19 @@ async function createPageImage(
       "div"
     );
 
+
   pageElement.className =
     "page";
 
 
-  /*
-    앞표지와 뒤표지를
-    단단한 표지로 지정
-  */
   if (
     pageNumber === 1 ||
     pageNumber === totalPages
   ) {
+
     pageElement.dataset.density =
       "hard";
+
   }
 
 
@@ -302,14 +340,18 @@ async function createPageImage(
       "img"
     );
 
+
   image.src =
     imageUrl;
+
 
   image.alt =
     `SUNDAY ZINE Vol.2 page ${pageNumber}`;
 
+
   image.draggable =
     false;
+
 
   image.decoding =
     "async";
@@ -318,6 +360,7 @@ async function createPageImage(
   pageElement.appendChild(
     image
   );
+
 
   book.appendChild(
     pageElement
@@ -329,13 +372,12 @@ async function createPageImage(
   );
 
 
-  /*
-    변환이 끝난 Canvas 메모리 해제
-  */
   canvas.width = 1;
   canvas.height = 1;
 
+
   page.cleanup();
+
 }
 
 
@@ -350,9 +392,11 @@ async function startViewer() {
       !window.St ||
       !window.St.PageFlip
     ) {
+
       throw new Error(
         "플립북 라이브러리를 불러오지 못했습니다."
       );
+
     }
 
 
@@ -370,13 +414,33 @@ async function startViewer() {
       pdf.numPages;
 
 
+    /*
+      실제 PDF 비율을 읽어서 사용한다.
+    */
+    const firstPage =
+      await pdf.getPage(1);
+
+
+    const firstViewport =
+      firstPage.getViewport({
+        scale: 1
+      });
+
+
+    pageRatio =
+      firstViewport.height /
+      firstViewport.width;
+
+
+    firstPage.cleanup();
+
+
     pageCounter.textContent =
       `01 / ${String(totalPages).padStart(2, "0")}`;
 
 
     /*
-      PDF 44페이지를 순서대로
-      PNG 페이지로 준비
+      PDF 페이지 준비
     */
     for (
       let pageNumber = 1;
@@ -387,6 +451,7 @@ async function startViewer() {
       status.textContent =
         `페이지 준비 중 ${pageNumber} / ${totalPages}`;
 
+
       await createPageImage(
         pdf,
         pageNumber
@@ -396,8 +461,20 @@ async function startViewer() {
 
 
     /*
-      브라우저 크기를 기준으로
-      책 크기 결정
+      크기를 계산하기 전에
+      하단 컨트롤 영역을 레이아웃에 먼저 포함시킨다.
+      보이지 않게만 해둔다.
+    */
+    controls.hidden =
+      false;
+
+    controls.style.visibility =
+      "hidden";
+
+
+    /*
+      위 변경사항을 브라우저 레이아웃에 반영한 뒤
+      실제 main 크기를 읽는다.
     */
     const bookSize =
       getBookSize();
@@ -407,6 +484,7 @@ async function startViewer() {
       new window.St.PageFlip(
         book,
         {
+
           width:
             bookSize.width,
 
@@ -451,6 +529,7 @@ async function startViewer() {
 
           disableFlipByClick:
             false
+
         }
       );
 
@@ -462,24 +541,29 @@ async function startViewer() {
         status.style.display =
           "none";
 
+
         book.classList.add(
           "ready"
         );
 
-        controls.hidden =
-          false;
+
+        controls.style.visibility =
+          "visible";
 
 
         if (
           event.data &&
           typeof event.data.page === "number"
         ) {
+
           updateCounter(
             event.data.page
           );
 
         } else {
+
           updateCounter(0);
+
         }
 
       }
@@ -533,14 +617,19 @@ async function startViewer() {
           event.key ===
           "ArrowLeft"
         ) {
+
           pageFlip.flipPrev();
+
         }
+
 
         if (
           event.key ===
           "ArrowRight"
         ) {
+
           pageFlip.flipNext();
+
         }
 
       }
@@ -558,11 +647,14 @@ async function startViewer() {
       "ready"
     );
 
+
     controls.hidden =
       true;
 
+
     status.style.display =
       "block";
+
 
     status.textContent =
       `오류: ${error.message || error}`;
@@ -573,8 +665,7 @@ async function startViewer() {
 
 
 /*
-  페이지를 닫으면
-  임시 PNG URL 정리
+  페이지 종료 시 임시 PNG 정리
 */
 window.addEventListener(
   "beforeunload",
@@ -584,9 +675,11 @@ window.addEventListener(
       const url
       of temporaryImageUrls
     ) {
+
       URL.revokeObjectURL(
         url
       );
+
     }
 
   }
