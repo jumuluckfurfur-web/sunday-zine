@@ -6,7 +6,7 @@
 
   <title>SUNDAY ZINE Vol.2 — AUTOSAVE</title>
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 
 <body>
@@ -17,11 +17,29 @@
   </header>
 
   <main>
-    <div id="status">SUNDAY ZINE을 불러오는 중...</div>
+    <div id="status" aria-live="polite">
+      PDF를 준비하는 중...
+    </div>
+
     <div id="book"></div>
   </main>
 
-  <script type="module" src="script.js?v=3"></script>
+  <nav id="controls" hidden>
+    <button id="prev" type="button" aria-label="이전 페이지">
+      ←
+    </button>
+
+    <div id="page-counter">
+      01 / 44
+    </div>
+
+    <button id="next" type="button" aria-label="다음 페이지">
+      →
+    </button>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js"></script>
+  <script type="module" src="script.js?v=4"></script>
 
 </body>
 </html>
